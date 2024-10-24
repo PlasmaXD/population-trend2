@@ -1,13 +1,20 @@
 // src/api/resas.ts
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import axios from 'axios';
+// import axios, { AxiosError } from 'axios';
 
+// 共通の API レスポンス形式
 interface RESASApiResponse<T> {
   message: string | null;
   result: T;
 }
 
+// 都道府県情報のインターフェース
+export interface Prefecture {
+  prefCode: number;
+  prefName: string;
+}
+
+// 人口構成データのインターフェース
 export interface PopulationComposition {
   year: number;
   total: number;
@@ -16,20 +23,41 @@ export interface PopulationComposition {
   elderly: number;
 }
 
-export interface Prefecture {
-  prefCode: number;
-  prefName: string;
+// 人口構成APIの結果データ構造
+interface PopulationDataEntry {
+  label: string;
+  data: Array<{
+    year: number;
+    value: number;
+  }>;
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-const RESAS_API_BASE_URL = '/api/resas'; // Next.js APIルートを使用
+interface PopulationCompositionResult {
+  data: PopulationDataEntry[];
+}
+
+// 環境変数の確認
+// const isProduction = process.env.NODE_ENV === 'production';
+const RESAS_API_BASE_URL = 'https://opendata.resas-portal.go.jp/api/v1'; // 外部 RESAS API のベースURL
+const RESAS_API_KEY = process.env.RESAS_API_KEY;
+
+if (!RESAS_API_KEY) {
+  throw new Error('RESAS_API_KEY is not defined');
+}
+
+// Axios クライアントの設定
 const apiClient = axios.create({
   baseURL: RESAS_API_BASE_URL,
-  headers: isProduction
-    ? {}
-    : { 'Content-Type': 'application/json' },
+  headers: {
+    'X-API-KEY': RESAS_API_KEY,
+    'Accept': 'application/json',
+  },
 });
 
+/**
+ * 都道府県データを取得する関数
+ * @returns Promise<Prefecture[]>
+ */
 export const fetchPrefectures = async (): Promise<Prefecture[]> => {
   try {
     const response = await apiClient.get<RESASApiResponse<Prefecture[]>>('/prefectures');
@@ -40,59 +68,78 @@ export const fetchPrefectures = async (): Promise<Prefecture[]> => {
     } else {
       throw new Error('Invalid response format');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to fetch prefectures:', error);
 
-    if (error.response) {
-      const status = error.response.status;
-      const message = error.response.data?.message || error.message;
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
       throw new Error(`Error ${status}: ${message}`);
+    } else if (error instanceof Error) {
+      throw new Error(error.message);
     } else {
-      throw new Error('Network error');
+      throw new Error('An unexpected error occurred');
     }
   }
 };
 
+/**
+ * 都道府県の人口構成データを取得する関数
+ * @param prefCode 都道府県コード
+ * @returns Promise<PopulationComposition[] | null>
+ */
 export const fetchPopulationComposition = async (prefCode: number): Promise<PopulationComposition[] | null> => {
   try {
-    const response = await apiClient.get<RESASApiResponse<any>>('/population/composition/perYear', {
+    const response = await apiClient.get<RESASApiResponse<PopulationCompositionResult>>('/population/composition/perYear', {
       params: {
         prefCode,
-        cityCode: '-',
+        cityCode: '-', // 全市区町村を対象とする場合は '-' を使用
       },
     });
     console.log('Response data from API:', response.data);
 
-    if (response.status === 200 && response.data && response.data.result && response.data.result.data) {
+    if (
+      response.status === 200 &&
+      response.data &&
+      response.data.result &&
+      Array.isArray(response.data.result.data)
+    ) {
       const data = response.data.result.data;
 
-      // 各人口区分ごとにデータを抽出
-      const totalData = data.find((item: any) => item.label === '総人口')?.data || [];
-      const youngData = data.find((item: any) => item.label === '年少人口')?.data || [];
-      const workingData = data.find((item: any) => item.label === '生産年齢人口')?.data || [];
-      const elderlyData = data.find((item: any) => item.label === '老年人口')?.data || [];
+      // 各人口区分ごとのデータを抽出
+      const totalDataEntry = data.find((item) => item.label === '総人口');
+      const youngDataEntry = data.find((item) => item.label === '年少人口');
+      const workingDataEntry = data.find((item) => item.label === '生産年齢人口');
+      const elderlyDataEntry = data.find((item) => item.label === '老年人口');
 
-      const populationData: PopulationComposition[] = totalData.map((item: any, index: number) => ({
+      if (!totalDataEntry || !youngDataEntry || !workingDataEntry || !elderlyDataEntry) {
+        throw new Error('Incomplete population data');
+      }
+
+      // 各年ごとの人口構成データをマッピング
+      const populationData: PopulationComposition[] = totalDataEntry.data.map((item, index) => ({
         year: item.year,
         total: item.value,
-        young: youngData[index]?.value || 0,
-        working: workingData[index]?.value || 0,
-        elderly: elderlyData[index]?.value || 0,
+        young: youngDataEntry.data[index]?.value || 0,
+        working: workingDataEntry.data[index]?.value || 0,
+        elderly: elderlyDataEntry.data[index]?.value || 0,
       }));
 
       return populationData;
     } else {
       throw new Error('Invalid response format');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Failed to fetch population composition for prefCode ${prefCode}:`, error);
 
-    if (error.response) {
-      const status = error.response.status;
-      const message = error.response.data?.message || error.message;
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
       throw new Error(`Error ${status}: ${message}`);
+    } else if (error instanceof Error) {
+      throw new Error(error.message);
     } else {
-      throw new Error('Network error');
+      throw new Error('An unexpected error occurred');
     }
   }
 };
