@@ -1,6 +1,4 @@
 // src/pages/index.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useState, useEffect } from 'react';
 import PrefectureSelector from '../components/PrefectureSelector';
 import PopulationChart from '../components/PopulationChart';
@@ -13,7 +11,7 @@ const Home: React.FC = () => {
   const [populationData, setPopulationData] = useState<{ [key: number]: PopulationComposition[] }>({});
   const [currentType, setCurrentType] = useState<PopulationType>('total');
   const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
-  const [error, setError] = useState<string | null>(null); // エラーステートを追加
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getPrefectures = async () => {
@@ -25,9 +23,11 @@ const Home: React.FC = () => {
         } else {
           setError('都道府県のデータ取得に失敗しました。');
         }
-      } catch (error: any) {
-        console.error('Error fetching prefectures:', error);
-        setError(error.message || '都道府県データの取得に失敗しました。');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Error fetching prefectures:', error);
+          setError(error.message || '都道府県データの取得に失敗しました。');
+        }
       }
     };
     getPrefectures();
@@ -52,9 +52,11 @@ const Home: React.FC = () => {
           })
         );
         setPopulationData(data);
-      } catch (error: any) {
-        console.error('Error fetching population data:', error);
-        setError(error.message || '人口データの取得に失敗しました。');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Error fetching population data:', error);
+          setError(error.message || '人口データの取得に失敗しました。');
+        }
       }
     };
 
