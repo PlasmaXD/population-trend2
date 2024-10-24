@@ -1,6 +1,6 @@
 // src/api/resas.ts
 
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
 // 共通の API レスポンス形式
 interface RESASApiResponse<T> {
@@ -37,7 +37,6 @@ interface PopulationCompositionResult {
 }
 
 // 環境変数の確認
-const isProduction = process.env.NODE_ENV === 'production';
 const RESAS_API_BASE_URL = 'https://opendata.resas-portal.go.jp/api/v1'; // 外部 RESAS API のベースURL
 const RESAS_API_KEY = process.env.RESAS_API_KEY;
 
@@ -85,7 +84,7 @@ export const fetchPrefectures = async (): Promise<Prefecture[]> => {
 
 /**
  * 都道府県の人口構成データを取得する関数
- * @param prefCode 都道府県コード
+ * @param prefCode - Prefecture code
  * @returns Promise<PopulationComposition[] | null>
  */
 export const fetchPopulationComposition = async (prefCode: number): Promise<PopulationComposition[] | null> => {
