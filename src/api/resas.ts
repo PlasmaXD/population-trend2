@@ -39,7 +39,7 @@ interface PopulationCompositionResult {
 // 環境変数の確認
 const RESAS_API_BASE_URL = 'https://opendata.resas-portal.go.jp/api/v1'; // 外部 RESAS API のベースURL
 const RESAS_API_KEY = process.env.RESAS_API_KEY;
-
+console.log('RESAS_API_KEY:', RESAS_API_KEY); 
 if (!RESAS_API_KEY) {
   throw new Error('RESAS_API_KEY is not defined');
 }
