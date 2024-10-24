@@ -1,4 +1,5 @@
 // src/pages/api/resas/[...path].ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';

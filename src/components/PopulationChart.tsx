@@ -16,13 +16,13 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-interface PopulationComposition {
-  year: number;
-  total: number;
-  young: number;
-  working: number;
-  elderly: number;
-}
+// interface PopulationComposition {
+//   year: number;
+//   total: number;
+//   young: number;
+//   working: number;
+//   elderly: number;
+// }
 
 interface PopulationChartProps {
   data: Record<string, number | string>[];

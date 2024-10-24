@@ -1,4 +1,5 @@
 // src/pages/index.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from 'react';
 import PrefectureSelector from '../components/PrefectureSelector';
