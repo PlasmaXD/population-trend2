@@ -1,6 +1,4 @@
 // src/pages/api/resas/[...path].ts
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 
@@ -35,14 +33,23 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     console.log('Response data:', response.data);
 
     res.status(response.status).json(response.data);
-  } catch (error: any) {
-    console.error(`Error fetching ${apiPath}:`, error.message);
-    console.error('Error response data:', error.response?.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // AxiosError 型の場合
+      console.error(`Error fetching ${apiPath}:`, error.message);
+      console.error('Error response data:', error.response?.data);
 
-    res.status(error.response?.status || 500).json({
-      message: error.message,
-      statusCode: error.response?.status || 500,
-      errorData: error.response?.data || null,
-    });
+      res.status(error.response?.status || 500).json({
+        message: error.message,
+        statusCode: error.response?.status || 500,
+        errorData: error.response?.data || null,
+      });
+    } else {
+      // その他のエラーの場合
+      console.error('Unexpected error:', error);
+      res.status(500).json({
+        message: 'Unexpected error occurred',
+      });
+    }
   }
 };
