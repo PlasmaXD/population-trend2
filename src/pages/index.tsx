@@ -6,7 +6,7 @@ import { fetchPopulationComposition, fetchPrefectures, PopulationComposition, Pr
 
 type PopulationType = 'total' | 'young' | 'working' | 'elderly';
 
-const Home: React.FC = () => {
+const HomePage: React.FC = () => {
   const [selectedPrefectures, setSelectedPrefectures] = useState<number[]>([]);
   const [populationData, setPopulationData] = useState<{ [key: number]: PopulationComposition[] }>({});
   const [currentType, setCurrentType] = useState<PopulationType>('total');
@@ -159,4 +159,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default HomePage;//export default Home; // または export default HomePage;
